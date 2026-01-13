@@ -404,13 +404,15 @@
         const [showFilters, setShowFilters] = useState(false);
         const [showStats, setShowStats] = useState(false); 
         const [filterSettings, setFilterSettings] = useState({
+            showOwned: true, // NEW
+            showNotOwned: true, // NEW
             showGen1Only: false, 
-            showBase151: false, // Renamed in UI to Modern 151
-            show1999: false, // NEW: Vintage 1999 Base Set
+            showBase151: false, 
+            show1999: false, 
             showSlots: true,
             showRealOnly: false,
-            showDream: true,
-            showIdeal: true,
+            showDream: false,
+            showIdeal: false,
             showTrainers: true, 
             showStandard: true,
             showEX: true, showGX: true, showV: true, showVMAX: true, showVSTAR: true, showMEGA: true,
@@ -841,79 +843,137 @@
                     {view === 'grid' && showStats && <StatsBar binder={binder} totalCards={stats.total} ownedCards={stats.owned} />}
 
                     {showFilters && (
-                        <div className="border-t border-slate-800 bg-slate-900/80 p-3">
+                        <div className="border-t border-slate-800 bg-slate-900/80 p-3 relative">
                             <div className="max-w-7xl mx-auto flex flex-col gap-4 text-sm">
                                 <div className="flex flex-col md:flex-row gap-6 justify-between">
-                                    <div className="flex flex-wrap gap-4 items-center">
-                                        <span className="text-slate-400 font-bold uppercase text-xs tracking-wider">Show:</span>
-                                        
+                                    <div className="flex flex-wrap gap-1.5 items-center">
+                                        {/* Removed Owned/Missing buttons from here */}
+
                                         {/* GEN 1 ONLY TOGGLE */}
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showGen1Only} onChange={() => toggleFilter('showGen1Only')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
-                                            <span className={filterSettings.showGen1Only ? "text-white font-bold" : "text-slate-500"}>Gen 1 Only</span>
-                                        </label>
+                                        <button 
+                                            onClick={() => toggleFilter('showGen1Only')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showGen1Only ? "bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            151
+                                        </button>
 
                                         {/* MODERN 151 TOGGLE */}
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showBase151} onChange={() => { toggleFilter('showBase151'); if(filterSettings.show1999) setFilterSettings(prev => ({...prev, show1999: false})); }} className="rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" />
-                                            <span className={filterSettings.showBase151 ? "text-purple-400 font-bold" : "text-slate-500"}>Modern 151 Set</span>
-                                        </label>
+                                        <button 
+                                            onClick={() => { toggleFilter('showBase151'); if(filterSettings.show1999) setFilterSettings(prev => ({...prev, show1999: false})); }} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showBase151 ? "bg-purple-600 text-white border-purple-500 hover:bg-purple-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            NEW
+                                        </button>
 
                                         {/* 1999 BASE SET TOGGLE */}
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.show1999} onChange={() => { toggleFilter('show1999'); if(filterSettings.showBase151) setFilterSettings(prev => ({...prev, showBase151: false})); }} className="rounded border-slate-600 bg-slate-800 text-yellow-500 focus:ring-yellow-500" />
-                                            <span className={filterSettings.show1999 ? "text-yellow-400 font-bold" : "text-slate-500"}>1999 Base Set</span>
-                                        </label>
+                                        <button 
+                                            onClick={() => { toggleFilter('show1999'); if(filterSettings.showBase151) setFilterSettings(prev => ({...prev, showBase151: false})); }} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.show1999 ? "bg-yellow-600 text-white border-yellow-500 hover:bg-yellow-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            OG
+                                        </button>
 
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showSlots} onChange={() => toggleFilter('showSlots')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
-                                            <span className={filterSettings.showSlots ? "text-white" : "text-slate-500"}>Slots</span>
-                                        </label>
+                                        <button 
+                                            onClick={() => toggleFilter('showSlots')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showSlots ? "bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            🃏+
+                                        </button>
 
                                         {/* TRAINER TOGGLE */}
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showTrainers} onChange={() => toggleFilter('showTrainers')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
-                                            <span className={filterSettings.showTrainers ? "text-white" : "text-slate-500"}>Trainers</span>
-                                        </label>
+                                        <button 
+                                            onClick={() => toggleFilter('showTrainers')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showTrainers ? "bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            🙎‍♂️
+                                        </button>
                                         
-                                        <div className="w-px h-6 bg-slate-700 mx-2 hidden md:block"></div>
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showDream} onChange={() => toggleFilter('showDream')} className="rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500" />
-                                            <span className={filterSettings.showDream ? "text-amber-400 font-bold" : "text-slate-500"}>Dream</span>
-                                        </label>
+                                        <div className="w-px h-4 bg-slate-700 mx-1"></div>
 
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showIdeal} onChange={() => toggleFilter('showIdeal')} className="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500" />
-                                            <span className={filterSettings.showIdeal ? "text-cyan-400 font-bold" : "text-slate-500"}>Ideal</span>
-                                        </label>
+                                        <button 
+                                            onClick={() => toggleFilter('showDream')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showDream ? "bg-amber-600 text-white border-amber-500 hover:bg-amber-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            👑
+                                        </button>
 
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showRealOnly} onChange={() => toggleFilter('showRealOnly')} className="rounded border-slate-600 bg-slate-800 text-pink-500 focus:ring-pink-500" />
-                                            <span className={filterSettings.showRealOnly ? "text-pink-400 font-bold" : "text-slate-500"}>Prioritize Real</span>
-                                        </label>
-                                    </div>
+                                        <button 
+                                            onClick={() => toggleFilter('showIdeal')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showIdeal ? "bg-cyan-600 text-white border-cyan-500 hover:bg-cyan-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            🖼️
+                                        </button>
 
-                                    <div className="flex flex-wrap gap-2 items-center">
-                                        <span className="text-slate-400 font-bold uppercase text-xs tracking-wider mr-2">Cols:</span>
-                                        {[0, 2, 3, 4, 5, 6].map(num => (
-                                            <button key={num} onClick={() => handleSetGridColumns(num)} className={`px-2 py-0.5 rounded text-xs font-bold transition-all ${gridColumns === num ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-                                                {num === 0 ? "Auto" : num}
-                                            </button>
-                                        ))}
+                                        <button 
+                                            onClick={() => toggleFilter('showRealOnly')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showRealOnly ? "bg-pink-600 text-white border-pink-500 hover:bg-pink-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                        >
+                                            Real
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="pt-2 border-t border-slate-800 flex flex-wrap gap-4 items-center">
-                                    <span className="text-slate-400 font-bold uppercase text-xs tracking-wider">Rarity:</span>
-                                    {["Standard", "EX", "GX", "V", "VMAX", "VSTAR", "MEGA"].map(r => {
-                                        const key = `show${r}`;
-                                        return (
-                                            <label key={r} className="flex items-center gap-2 cursor-pointer select-none">
-                                                <input type="checkbox" checked={filterSettings[key]} onChange={() => toggleFilter(key)} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
-                                                <span className={filterSettings[key] ? "text-white font-bold" : "text-slate-600"}>{r}</span>
-                                            </label>
-                                        )
-                                    })}
+                                
+                                <div className="pt-2 border-t border-slate-800 flex flex-wrap gap-4 justify-between items-center">
+                                    <div className="flex flex-wrap gap-1.5 items-center">
+                                        {[
+                                            { id: "Standard", label: "S" },
+                                            { id: "EX", label: "EX" },
+                                            { id: "GX", label: "GX" },
+                                            { id: "V", label: "V" },
+                                            { id: "VMAX", label: "VM" },
+                                            { id: "VSTAR", label: "V⭐️" },
+                                            { id: "MEGA", label: "M" }
+                                        ].map(r => {
+                                            const key = `show${r.id}`;
+                                            const isActive = filterSettings[key];
+                                            return (
+                                                <button 
+                                                    key={r.id} 
+                                                    onClick={() => toggleFilter(key)} 
+                                                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${
+                                                        isActive 
+                                                        ? "bg-indigo-600 text-white border-indigo-500 hover:bg-indigo-500" 
+                                                        : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"
+                                                    }`}
+                                                >
+                                                    {r.label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {/* COLUMN DROPDOWN */}
+                                    <select 
+                                        value={gridColumns} 
+                                        onChange={(e) => handleSetGridColumns(parseInt(e.target.value))} 
+                                        className="bg-slate-800 text-white text-xs font-bold rounded border border-slate-600 px-2 py-1 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
+                                        title="Columns"
+                                    >
+                                        <option value={0}>Auto</option>
+                                        <option value={1}>1</option>
+                                        <option value={2}>2</option>
+                                        <option value={3}>3</option>
+                                        <option value={4}>4</option>
+                                        <option value={5}>5</option>
+                                        <option value={6}>6</option>
+                                    </select>
                                 </div>
+                            </div>
+
+                            {/* HANGING TAB FOR OWNED/MISSING */}
+                            <div className="absolute top-full right-4 bg-slate-900 border-x border-b border-slate-700 rounded-b-lg px-3 py-2 shadow-xl flex gap-2 z-0">
+                                <button 
+                                    onClick={() => toggleFilter('showOwned')} 
+                                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showOwned ? "bg-green-600 text-white border-green-500 hover:bg-green-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                >
+                                    Owned
+                                </button>
+                                <button 
+                                    onClick={() => toggleFilter('showNotOwned')} 
+                                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showNotOwned ? "bg-rose-600 text-white border-rose-500 hover:bg-rose-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                >
+                                    Missing
+                                </button>
                             </div>
                         </div>
                     )}
@@ -1089,8 +1149,16 @@
             return entries.filter(p => {
                 const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.displayId.includes(searchQuery);
                 if (!matchesSearch) return false;
-                if (p.isBase) return true;
+                
+                // OWNERSHIP FILTER
                 const cardData = binder[p.key];
+                const isOwned = cardData?.owned || false;
+
+                if (isOwned && !filterSettings.showOwned) return false;
+                if (!isOwned && !filterSettings.showNotOwned) return false;
+
+                if (p.isBase) return true;
+                
                 const rarity = cardData?.cardType || "standard";
                 const rKey = `show${rarity === "standard" ? "Standard" : rarity}`;
                 
@@ -1255,6 +1323,7 @@
                 value: manualValue, 
                 cardType: selectedRarity 
             });
+            onBack(); // Automatically return to Dex
         };
 
         const handleMarketSearch = () => {
@@ -1433,6 +1502,15 @@
                         </div>
                     </div>
                 </div>
+
+                {/* NEW BOTTOM SAVE BUTTON */}
+                <button 
+                    onClick={handleManualSave} 
+                    className={`w-full mt-6 py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 text-lg transition-all ${manualUrl || fanArtUrl || dreamUrl || idealUrl || selectedRarity !== 'standard' ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed border border-slate-700'}`} 
+                    disabled={!manualUrl && !fanArtUrl && !dreamUrl && !idealUrl && selectedRarity === 'standard'}
+                >
+                    <IconSave /> Save & Return to Dex
+                </button>
             </div>
         );
     };
@@ -1443,6 +1521,7 @@
 </script>
 </body>
 </html>
+
 
 
 
