@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Project 151: Collector V3.2</title>
+    <title>Project 151: Collector V3.3</title>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068780.png" type="image/png">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.freepik.com/512/1068/1068780.png">
-
+    
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
@@ -96,6 +95,25 @@
         .stats-gradient {
             background: linear-gradient(90deg, rgba(15,23,42,0) 0%, rgba(51,65,85,0.5) 50%, rgba(15,23,42,0) 100%);
         }
+
+        .trainer-separator {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0 0.5rem 0;
+        }
+        .trainer-separator::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: repeating-linear-gradient(90deg, #475569 0, #475569 6px, transparent 6px, transparent 12px);
+        }
     </style>
 </head>
 <body>
@@ -131,6 +149,7 @@
     const IconSparkles = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>;
     const IconClipboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
     const IconExchange = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 10h14l-4-4"/><path d="M17 14H3l4 4"/></svg>;
+    const IconUser = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 
     // --- UTILS ---
     const Toast = ({ msg, onClose }) => {
@@ -297,6 +316,7 @@
 
     const getDefaultImage = (entry) => {
         if (entry.cardImage) return entry.cardImage;
+        if (entry.isTrainer) return 'https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg';
         if (entry.apiId <= 151) return `https://images.pokemontcg.io/sv3pt5/${entry.apiId}.png`;
         return 'https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg';
     };
@@ -353,7 +373,8 @@
             showSlots: true,
             showRealOnly: false,
             showDream: true,
-            showIdeal: true, // New Ideal Filter
+            showIdeal: true,
+            showTrainers: true, // NEW
             showStandard: true,
             showEx: true, showGx: true, showV: true, showVmax: true, showVstar: true, showMega: true,
         });
@@ -393,20 +414,20 @@
             RAW_POKEMON.forEach(raw => {
                 let entry;
                 if (typeof raw === 'string') {
-                    entry = { name: raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0'), isBase: true };
+                    entry = { name: raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0'), isBase: true, isTrainer: false };
                     currentDex++;
                     result.push(entry);
                 } else if (!raw.isMega) {
-                    entry = { ...raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0'), isBase: true };
+                    entry = { ...raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0'), isBase: true, isTrainer: false };
                     currentDex++;
                     result.push(entry);
                 }
             });
 
-            // Process Extras
+            // Process Extras (now includes manual IDs and Trainers)
             const sortedExtras = [...extraPokemon].sort((a, b) => a.apiId - b.apiId);
             
-            // Filter Gen 2 vs Gen 3
+            // Filter Gen 2 vs Gen 3 vs High ID (Manual)
             if (filterSettings.showGen2) {
                 const gen2 = sortedExtras.filter(e => e.apiId >= 152 && e.apiId <= 251);
                 result = [...result, ...gen2];
@@ -416,8 +437,18 @@
                 result = [...result, ...gen3];
             }
             
-            const others = sortedExtras.filter(e => e.apiId > 386 || e.apiId < 152);
-            if (filterSettings.showGen2 || filterSettings.showGen3) result = [...result, ...others];
+            // Allow manual entries (Gen 4+) to show if they are Pokemon, OR show all manual input regardless of range if it matches nothing else
+            const others = sortedExtras.filter(e => (e.apiId > 386 || e.apiId < 152) && !e.isBase);
+            // Always show "others" (manual entries) if they exist, unless filtered by Trainer toggle
+            result = [...result, ...others];
+
+            // Filter Trainers if hidden
+            if (!filterSettings.showTrainers) {
+                result = result.filter(e => !e.isTrainer);
+            }
+
+            // Re-sort entire list by ID to ensure correct placement
+            result.sort((a, b) => a.apiId - b.apiId);
 
             // Process Slots
             let finalResult = [];
@@ -444,7 +475,8 @@
                             isCustom: true,
                             isBase: false,
                             name: entry.name + " (Slot)",
-                            _sortWeight: getRarityWeight(rarity)
+                            _sortWeight: getRarityWeight(rarity),
+                            isTrainer: entry.isTrainer
                         };
                     });
                     slotEntries.sort((a, b) => a._sortWeight - b._sortWeight);
@@ -477,7 +509,7 @@
                     url: data.url, 
                     fanArtUrl: data.fanArtUrl,
                     dreamUrl: data.dreamUrl,
-                    idealUrl: data.idealUrl, // New Field
+                    idealUrl: data.idealUrl,
                     name: data.name, 
                     owned: ownedStatus, 
                     value: cardValue,
@@ -531,7 +563,7 @@
         
         const deleteExtraPokemon = (entry) => {
             setConfirmConfig({
-                msg: `Remove ${entry.name} from your pokedex?`,
+                msg: `Remove ${entry.name} from your collection?`,
                 action: () => {
                     const newExtras = extraPokemon.filter(p => p.key !== entry.key);
                     setExtraPokemon(newExtras);
@@ -545,7 +577,7 @@
                     localStorage.setItem('project151_binder', JSON.stringify(newBinder));
                     localStorage.setItem('project151_slots', JSON.stringify(newSlots));
                     setView('grid');
-                    setToastMsg("Pokemon Removed");
+                    setToastMsg("Entry Removed");
                 }
             });
         };
@@ -593,11 +625,11 @@
                 RAW_POKEMON.forEach(raw => {
                     let entry;
                     if (typeof raw === 'string') {
-                        entry = { name: raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0') };
+                        entry = { name: raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0'), isTrainer: false };
                         currentDex++;
                         result.push(entry);
                     } else if (!raw.isMega) {
-                        entry = { ...raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0') };
+                        entry = { ...raw, apiId: currentDex, key: currentDex.toString(), isMega: false, displayId: currentDex.toString().padStart(3, '0'), isTrainer: false };
                         currentDex++;
                         result.push(entry);
                     }
@@ -609,7 +641,7 @@
                     finalResult.push(entry);
                     if (customSlots[entry.key]) {
                         customSlots[entry.key].forEach(childKey => {
-                            finalResult.push({ ...entry, key: childKey, isCustom: true, name: entry.name + " (Slot)" });
+                            finalResult.push({ ...entry, key: childKey, isCustom: true, name: entry.name + " (Slot)", isTrainer: entry.isTrainer });
                         });
                     }
                 });
@@ -617,8 +649,7 @@
             };
 
             const allEntries = generateAllEntries();
-            // ADDED: IdealURL Column at end
-            const headers = ["SystemKey", "Name", "ApiId", "DisplayId", "Category", "ParentKey", "Owned", "Value", "ImageURL", "FanArtURL", "CardType", "DreamURL", "IdealURL"];
+            const headers = ["SystemKey", "Name", "ApiId", "DisplayId", "Category", "ParentKey", "Owned", "Value", "ImageURL", "FanArtURL", "CardType", "DreamURL", "IdealURL", "IsTrainer"];
             const rows = [headers.join(",")];
 
             allEntries.forEach(entry => {
@@ -642,7 +673,7 @@
                 const isStructural = category === "Manual" || category === "Slot";
 
                 if (hasData || isStructural) {
-                    const row = [entry.key, safeName, entry.apiId, entry.displayId, category, parentKey, b.owned ? "TRUE" : "FALSE", safeValue, safeUrl, safeFanArt, safeCardType, safeDream, safeIdeal];
+                    const row = [entry.key, safeName, entry.apiId, entry.displayId, category, parentKey, b.owned ? "TRUE" : "FALSE", safeValue, safeUrl, safeFanArt, safeCardType, safeDream, safeIdeal, entry.isTrainer ? "TRUE" : "FALSE"];
                     rows.push(row.join(","));
                 }
             });
@@ -672,9 +703,9 @@
                         if (!lines[i].trim()) continue;
                         const row = parseCSVRow(lines[i]); 
                         if (row.length < 9) continue;
-                        // NEW: added dreamUrl and idealUrl at the end
-                        const [key, name, apiId, displayId, category, parentKey, ownedStr, value, url, fanArtUrl, cardType, dreamUrl, idealUrl] = row;
+                        const [key, name, apiId, displayId, category, parentKey, ownedStr, value, url, fanArtUrl, cardType, dreamUrl, idealUrl, isTrainerStr] = row;
                         const isOwned = ownedStr === "TRUE";
+                        const isTrainer = isTrainerStr === "TRUE";
                         const typeVal = cardType || "standard";
                         if (isOwned || value || url || name || fanArtUrl || dreamUrl || idealUrl || typeVal !== "standard") {
                             newBinder[key] = { 
@@ -689,7 +720,7 @@
                             };
                         }
                         if (category === "Manual") {
-                            newExtras.push({ name: name, apiId: parseInt(apiId) || 0, key: key, isMega: false, displayId: displayId, cardImage: null });
+                            newExtras.push({ name: name, apiId: parseInt(apiId) || 0, key: key, isMega: false, displayId: displayId, cardImage: null, isTrainer: isTrainer });
                         }
                         if (category === "Slot" && parentKey) {
                             if (!newSlots[parentKey]) newSlots[parentKey] = [];
@@ -735,7 +766,7 @@
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold text-slate-900"><IconDna /></div>
                             <div>
-                                <h1 className="text-xl font-bold tracking-tight text-white">Project 151 <span className="text-indigo-400 text-sm font-normal">V3.2</span></h1>
+                                <h1 className="text-xl font-bold tracking-tight text-white">Project 151 <span className="text-indigo-400 text-sm font-normal">V3.3</span></h1>
                             </div>
                         </div>
 
@@ -773,8 +804,13 @@
                                             <input type="checkbox" checked={filterSettings.showSlots} onChange={() => toggleFilter('showSlots')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
                                             <span className={filterSettings.showSlots ? "text-white" : "text-slate-500"}>Slots</span>
                                         </label>
+
+                                        {/* TRAINER TOGGLE */}
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" checked={filterSettings.showTrainers} onChange={() => toggleFilter('showTrainers')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
+                                            <span className={filterSettings.showTrainers ? "text-white" : "text-slate-500"}>Trainers</span>
+                                        </label>
                                         
-                                        {/* IMAGE LAYERS FILTERS */}
                                         <div className="w-px h-6 bg-slate-700 mx-2 hidden md:block"></div>
                                         <label className="flex items-center gap-2 cursor-pointer select-none">
                                             <input type="checkbox" checked={filterSettings.showDream} onChange={() => toggleFilter('showDream')} className="rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500" />
@@ -880,43 +916,98 @@
     };
 
     const AddPokemonModal = ({ onClose, onAdd }) => {
+        const [mode, setMode] = useState('list'); // 'list' or 'manual'
         const [activeGen, setActiveGen] = useState(2);
         const [selectedId, setSelectedId] = useState("");
         const [url, setUrl] = useState("");
+        
+        // Manual States
+        const [manualName, setManualName] = useState("");
+        const [manualId, setManualId] = useState("");
+        const [isTrainer, setIsTrainer] = useState(false);
+
         const currentList = activeGen === 2 ? GEN_2_POKEMON : GEN_3_POKEMON;
 
         const handleSubmit = () => {
-            if (!selectedId) return;
-            const poke = currentList.find(p => p.id === parseInt(selectedId));
-            if (!poke) return;
-            const newPoke = { name: poke.name, apiId: poke.id, key: poke.id.toString() + "-" + poke.name.toLowerCase(), isMega: false, displayId: poke.id.toString().padStart(3, '0'), cardImage: url || null };
-            onAdd(newPoke);
+            if (mode === 'list') {
+                if (!selectedId) return;
+                const poke = currentList.find(p => p.id === parseInt(selectedId));
+                if (!poke) return;
+                const newPoke = { name: poke.name, apiId: poke.id, key: poke.id.toString() + "-" + poke.name.toLowerCase(), isMega: false, displayId: poke.id.toString().padStart(3, '0'), cardImage: url || null, isTrainer: false };
+                onAdd(newPoke);
+            } else {
+                if (!manualName || !manualId) return;
+                const idNum = parseInt(manualId);
+                const newPoke = { 
+                    name: manualName, 
+                    apiId: idNum, 
+                    key: idNum.toString() + "-" + manualName.toLowerCase().replace(/ /g, '-'), 
+                    isMega: false, 
+                    displayId: idNum.toString().padStart(3, '0'), 
+                    cardImage: url || null,
+                    isTrainer: isTrainer
+                };
+                onAdd(newPoke);
+            }
         };
 
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
                 <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold">Add Pokemon</h3>
+                        <h3 className="text-xl font-bold">Add Entry</h3>
                         <button onClick={onClose}><IconX /></button>
                     </div>
+
+                    <div className="flex gap-2 mb-4 bg-slate-900/50 p-1 rounded-lg">
+                        <button onClick={() => setMode('list')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${mode === 'list' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>From Pokedex</button>
+                        <button onClick={() => setMode('manual')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${mode === 'manual' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Manual Input</button>
+                    </div>
+
                     <div className="space-y-4">
-                        <div className="flex gap-2 mb-2">
-                            <button onClick={() => { setActiveGen(2); setSelectedId(""); }} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeGen === 2 ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white'}`}>Gen 2</button>
-                            <button onClick={() => { setActiveGen(3); setSelectedId(""); }} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeGen === 3 ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white'}`}>Gen 3</button>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-slate-400 mb-1">Select Pokemon</label>
-                            <select className="w-full glass-input rounded px-3 py-2 text-white" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-                                <option value="">-- Choose a Pokemon --</option>
-                                {currentList.map(p => <option key={p.id} value={p.id}>#{p.id} - {p.name}</option>)}
-                            </select>
-                        </div>
+                        {mode === 'list' ? (
+                            <>
+                                <div className="flex gap-2 mb-2">
+                                    <button onClick={() => { setActiveGen(2); setSelectedId(""); }} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeGen === 2 ? 'bg-slate-700 text-white ring-1 ring-indigo-500' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Gen 2</button>
+                                    <button onClick={() => { setActiveGen(3); setSelectedId(""); }} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeGen === 3 ? 'bg-slate-700 text-white ring-1 ring-indigo-500' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Gen 3</button>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Select Pokemon</label>
+                                    <select className="w-full glass-input rounded px-3 py-2 text-white" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+                                        <option value="">-- Choose a Pokemon --</option>
+                                        {currentList.map(p => <option key={p.id} value={p.id}>#{p.id} - {p.name}</option>)}
+                                    </select>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Entry Name</label>
+                                    <input type="text" className="w-full glass-input rounded px-3 py-2 text-white" placeholder="e.g. Lucario, Cynthia..." value={manualName} onChange={(e) => setManualName(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Sort ID Number</label>
+                                    <input type="number" className="w-full glass-input rounded px-3 py-2 text-white" placeholder="e.g. 448 (Tip: Use 1000+ for Trainers)" value={manualId} onChange={(e) => setManualId(e.target.value)} />
+                                    <p className="text-[10px] text-slate-500 mt-1">This determines where it sits in the grid.</p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-slate-900 px-3 py-2 rounded-lg border border-slate-700 mt-2">
+                                    <div className="flex-1">
+                                        <span className="text-sm font-bold text-white block">Is this a Trainer?</span>
+                                        <span className="text-xs text-slate-400">Adds separation line in grid</span>
+                                    </div>
+                                    <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="trainerToggle" id="trainerToggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 left-0" checked={isTrainer} onChange={() => setIsTrainer(!isTrainer)} />
+                                        <label htmlFor="trainerToggle" className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer transition-colors duration-300 ${isTrainer ? 'bg-indigo-500' : 'bg-slate-600'}`}></label>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         <div>
                             <label className="block text-xs text-slate-400 mb-1">Default Image URL (Optional)</label>
                             <input type="text" className="w-full glass-input rounded px-3 py-2 text-white" placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
                         </div>
-                        <button onClick={handleSubmit} disabled={!selectedId} className={`w-full py-3 rounded-lg font-bold mt-4 shadow-lg transition-colors ${selectedId ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Add to List</button>
+                        <button onClick={handleSubmit} disabled={mode === 'list' ? !selectedId : (!manualName || !manualId)} className={`w-full py-3 rounded-lg font-bold mt-4 shadow-lg transition-colors ${((mode === 'list' && selectedId) || (mode === 'manual' && manualName && manualId)) ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Add to List</button>
                     </div>
                 </div>
             </div>
@@ -937,9 +1028,11 @@
             });
         }, [searchQuery, entries, binder, filterSettings]);
 
+        let lastWasTrainer = false;
+
         return (
             <div className={`grid ${gridColumns === 0 ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : `grid-cols-${gridColumns}`} gap-3 md:gap-6`}>
-                {filteredList.map((entry) => {
+                {filteredList.map((entry, index) => {
                     const customCard = binder[entry.key];
                     const isOwned = customCard && customCard.owned;
                     let imageSrc = getDefaultImage(entry);
@@ -952,7 +1045,6 @@
                     let showingDream = false;
                     let showingIdeal = false;
                     
-                    // Logic Priority: Real Only > Ideal > Dream > Fan Art > Real/Default
                     if (filterSettings.showRealOnly) {
                         if (hasRealUrl) imageSrc = customCard.url;
                     } else {
@@ -984,51 +1076,63 @@
                     else if (rarity === "VMAX") { cardBorderClass = "rarity-vmax"; badgeClass = "badge-vmax"; badgeText = "VMAX"; } 
                     else if (rarity === "VSTAR") { cardBorderClass = "rarity-vstar"; badgeClass = "badge-vstar"; badgeText = "VSTAR"; } 
                     else if (entry.isMega) { cardBorderClass = "mega-glow border-purple-500"; badgeClass = "mega-badge text-white"; badgeText = "MEGA"; }
+                    else if (entry.isTrainer) { badgeClass = "bg-indigo-900 text-indigo-200"; badgeText = "TRAINER"; cardBorderClass = "border-indigo-900"; }
 
                     if (isOwned && rarity === "standard" && !entry.isMega) cardBorderClass = "border-green-500";
                     else if (entry.isCustom && rarity === "standard") cardBorderClass = "extra-border border-blue-400";
 
+                    // Trainer Separator Logic
+                    let showSeparator = false;
+                    // If current is Trainer and previous wasn't a Trainer, show separator
+                    // Check logic based on sorted filtered list
+                    if (entry.isTrainer && !lastWasTrainer) {
+                         showSeparator = true;
+                    }
+                    if (entry.isTrainer) lastWasTrainer = true;
+
                     return (
-                        <div key={entry.key} id={`poke-card-${entry.key}`} onClick={() => onSelect(entry)} className={`card-hover bg-slate-800 rounded-lg overflow-hidden cursor-pointer group relative border ${cardBorderClass}`}>
-                            <div className={`absolute top-1 left-1 z-10 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${badgeClass}`}>{badgeText}</div>
-                            
-                            {/* Quick Check Button */}
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onToggleOwned(entry.key); }}
-                                className={`absolute top-1 right-1 z-20 rounded-full p-1.5 transition-colors shadow-lg border border-transparent ${isOwned ? "bg-green-600 text-white" : "bg-slate-900/80 text-slate-500 hover:text-white hover:bg-slate-700"}`}
-                            >
-                                <IconCheck />
-                            </button>
+                        <React.Fragment key={entry.key}>
+                            {showSeparator && <div className="trainer-separator">Trainers</div>}
+                            <div id={`poke-card-${entry.key}`} onClick={() => onSelect(entry)} className={`card-hover bg-slate-800 rounded-lg overflow-hidden cursor-pointer group relative border ${cardBorderClass}`}>
+                                <div className={`absolute top-1 left-1 z-10 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${badgeClass}`}>{badgeText}</div>
+                                
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onToggleOwned(entry.key); }}
+                                    className={`absolute top-1 right-1 z-20 rounded-full p-1.5 transition-colors shadow-lg border border-transparent ${isOwned ? "bg-green-600 text-white" : "bg-slate-900/80 text-slate-500 hover:text-white hover:bg-slate-700"}`}
+                                >
+                                    <IconCheck />
+                                </button>
 
-                            {!isOwned && entry.isCustom && <div className="absolute top-8 right-2 z-10 text-slate-500 text-[10px] font-bold">EXTRA</div>}
-                            
-                            {showingFanArt && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold fan-art-badge"><IconPalette /> ART</div>}
-                            {showingDream && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold dream-badge"><IconStar /> DREAM</div>}
-                            {showingIdeal && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold ideal-badge"><IconSparkles /> IDEAL</div>}
+                                {!isOwned && entry.isCustom && <div className="absolute top-8 right-2 z-10 text-slate-500 text-[10px] font-bold">EXTRA</div>}
+                                
+                                {showingFanArt && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold fan-art-badge"><IconPalette /> ART</div>}
+                                {showingDream && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold dream-badge"><IconStar /> DREAM</div>}
+                                {showingIdeal && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold ideal-badge"><IconSparkles /> IDEAL</div>}
 
-                            <div className="aspect-[2.5/3.5] bg-slate-900 relative">
-                                <img 
-                                    src={imageSrc} 
-                                    alt={entry.name} 
-                                    className="w-full h-full object-contain p-1" 
-                                    loading="lazy" 
-                                    onError={(e) => { e.target.onerror = null; e.target.src = "https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg"; }} 
-                                />
+                                <div className="aspect-[2.5/3.5] bg-slate-900 relative">
+                                    <img 
+                                        src={imageSrc} 
+                                        alt={entry.name} 
+                                        className="w-full h-full object-contain p-1" 
+                                        loading="lazy" 
+                                        onError={(e) => { e.target.onerror = null; e.target.src = "https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg"; }} 
+                                    />
+                                </div>
+                                <div className={`p-2 text-center ${entry.isMega || rarity !== "standard" ? 'bg-gradient-to-t from-slate-900 to-slate-800' : 'bg-slate-800'}`}>
+                                    <h3 className={`font-bold text-xs md:text-sm truncate ${entry.isMega ? 'text-purple-300' : rarity !== "standard" ? 'text-white' : 'text-white'}`}>
+                                        {entry.name.replace(" (Slot)", "")}
+                                        {entry.isCustom && <span className="text-blue-400 ml-1 text-[10px] uppercase"></span>}
+                                    </h3>
+                                </div>
                             </div>
-                            <div className={`p-2 text-center ${entry.isMega || rarity !== "standard" ? 'bg-gradient-to-t from-slate-900 to-slate-800' : 'bg-slate-800'}`}>
-                                <h3 className={`font-bold text-xs md:text-sm truncate ${entry.isMega ? 'text-purple-300' : rarity !== "standard" ? 'text-white' : 'text-white'}`}>
-                                    {entry.name.replace(" (Slot)", "")}
-                                    {entry.isCustom && <span className="text-blue-400 ml-1 text-[10px] uppercase"></span>}
-                                </h3>
-                            </div>
-                        </div>
+                        </React.Fragment>
                     );
                 })}
 
                 {!searchQuery && (
                     <div onClick={onOpenAddModal} className="card-hover bg-slate-800/50 rounded-lg overflow-hidden cursor-pointer border add-card-border flex flex-col items-center justify-center text-green-400 gap-2 aspect-[2.5/3.5]">
                         <div className="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center"><IconPlus /></div>
-                        <span className="text-sm font-bold text-center px-4">Add Manual Entry</span>
+                        <span className="text-sm font-bold text-center px-4">Add Entry</span>
                     </div>
                 )}
             </div>
@@ -1045,7 +1149,6 @@
         const [selectedRarity, setSelectedRarity] = useState(binderEntry?.cardType || "standard");
         const [showImagePreview, setShowImagePreview] = useState(false);
 
-        // SYNC LOCAL STATE WHEN PROPS CHANGE (Swap Logic needs this)
         useEffect(() => {
             setManualUrl(binderEntry?.url || "");
             setFanArtUrl(binderEntry?.fanArtUrl || "");
@@ -1100,8 +1203,6 @@
                 {showImagePreview && <ImagePreviewModal src={displayImage} onClose={() => setShowImagePreview(false)} />}
                 <div className="sticky top-[58px] z-30 bg-slate-900/95 backdrop-blur border-b border-slate-700 py-3 mb-6 -mx-4 px-4 shadow-lg flex justify-between items-center">
                     <button onClick={onBack} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors font-bold"><IconArrowLeft /> Back to Binder</button>
-                    
-                    {/* SWAP BUTTON */}
                     {entry.isCustom && (
                         <button onClick={() => onSwapSlot(entry)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-lg">
                             <IconExchange /> Promote to Main
@@ -1113,7 +1214,7 @@
                     <div>
                         <h2 className="text-2xl font-bold flex items-center gap-2">
                             {entry.name.replace(" (Slot)", "")} 
-                            <span className={`text-sm px-2 py-1 rounded ${entry.isMega ? 'bg-purple-900 text-purple-200' : 'bg-slate-700 text-slate-400'}`}>{entry.isMega ? 'MEGA' : '#' + entry.displayId}</span>
+                            <span className={`text-sm px-2 py-1 rounded ${entry.isMega ? 'bg-purple-900 text-purple-200' : entry.isTrainer ? 'bg-indigo-900 text-indigo-200' : 'bg-slate-700 text-slate-400'}`}>{entry.isMega ? 'MEGA' : entry.isTrainer ? 'TRAINER' : '#' + entry.displayId}</span>
                             {entry.isCustom && <span className="text-sm bg-blue-900 text-blue-200 px-2 py-1 rounded">EXTRA SLOT</span>}
                         </h2>
                         <div className="flex items-center gap-2 mt-2">
@@ -1140,7 +1241,7 @@
                                 <button onClick={() => onRemoveSlot(entry)} className="flex items-center gap-2 bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded text-xs font-bold text-white transition-colors whitespace-nowrap"><IconTrash /> Slot</button>
                             )}
                             {!entry.isCustom && entry.apiId > 151 && !entry.isMega && (
-                                <button onClick={() => onDeletePokemon(entry)} className="flex items-center gap-2 bg-red-900/50 hover:bg-red-900 border border-red-800 px-3 py-1.5 rounded text-xs font-bold text-red-200 transition-colors whitespace-nowrap"><IconTrash /> Pokemon</button>
+                                <button onClick={() => onDeletePokemon(entry)} className="flex items-center gap-2 bg-red-900/50 hover:bg-red-900 border border-red-800 px-3 py-1.5 rounded text-xs font-bold text-red-200 transition-colors whitespace-nowrap"><IconTrash /> Entry</button>
                             )}
                         </div>
                     </div>
