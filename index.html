@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Project 151: Collector V3.5</title>
+    <title>P-151: Collector V3.5</title>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068780.png" type="image/png">
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -748,12 +748,27 @@
             reader.readAsText(file);
         };
 
+        const handleClearData = () => {
+            setConfirmConfig({
+                msg: "WARNING: This will permanently delete all your collected cards, custom slots, and manual entries. Start a fresh collection?",
+                action: () => {
+                    localStorage.removeItem('project151_binder');
+                    localStorage.removeItem('project151_slots');
+                    localStorage.removeItem('project151_extras');
+                    setBinder({});
+                    setCustomSlots({});
+                    setExtraPokemon([]);
+                    setToastMsg("Data Cleared - Fresh Start!");
+                }
+            });
+        };
+
         const toggleFilter = (key) => setFilterSettings(prev => ({ ...prev, [key]: !prev[key] }));
         const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-        const scrollToBottom = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
 
         return (
-            <div className="min-h-screen pb-10">
+            <div className="min-h-screen">
                 <Toast msg={toastMsg} onClose={() => setToastMsg(null)} />
                 <ConfirmDialog config={confirmConfig} onCancel={() => setConfirmConfig(null)} />
                 <input type="file" ref={fileInputRef} onChange={handleImportCSV} accept=".csv" className="hidden" />
@@ -771,7 +786,7 @@
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold text-slate-900"><IconDna /></div>
                             <div>
-                                <h1 className="text-xl font-bold tracking-tight text-white">Project 151 <span className="text-indigo-400 text-sm font-normal">V3.5</span></h1>
+                                <h1 className="text-xl font-bold tracking-tight text-white">P-151 <span className="text-indigo-400 text-sm font-normal">V3.5</span></h1>
                             </div>
                         </div>
 
@@ -786,6 +801,7 @@
                             <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors text-xs font-bold border border-transparent ${showFilters ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`} title="Filters"><IconFilter /></button>
                             <button onClick={handleExportCSV} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-green-400 transition-colors text-xs font-bold border border-transparent hover:border-green-900" title="Download CSV"><IconDownload /> <span className="hidden sm:inline">CSV</span></button>
                             <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-blue-400 transition-colors text-xs font-bold border border-transparent hover:border-blue-900" title="Upload CSV"><IconUpload /></button>
+                            <button onClick={handleClearData} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-red-400 transition-colors text-xs font-bold border border-transparent hover:border-red-900" title="Clear Data / New CSV"><IconTrash /></button>
                         </div>
                     </div>
 
@@ -889,6 +905,10 @@
                         />
                     )}
                 </main>
+
+                <footer className="text-center py-6 text-[10px] text-slate-600 uppercase tracking-widest font-bold opacity-50 hover:opacity-100 transition-opacity select-none">
+                    Created by ConorRM
+                </footer>
             </div>
         );
     };
@@ -1365,6 +1385,10 @@
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
