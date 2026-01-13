@@ -114,6 +114,27 @@
             height: 1px;
             background: repeating-linear-gradient(90deg, #475569 0, #475569 6px, transparent 6px, transparent 12px);
         }
+
+        /* NEW STYLES FOR TRAINER BREAKS */
+        .trainer-break {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.5;
+        }
+        .trainer-break::before {
+            content: "";
+            width: 100%;
+            height: 1px;
+            background: repeating-linear-gradient(90deg, #6366f1 0, #6366f1 4px, transparent 4px, transparent 12px); 
+        }
+        .trainer-break-top {
+            margin: 1rem 0 1.5rem 0;
+        }
+        .trainer-break-bottom {
+            margin: 1.5rem 0 1rem 0;
+        }
     </style>
 </head>
 <body>
@@ -371,10 +392,9 @@
         
         // Filter States
         const [showFilters, setShowFilters] = useState(false);
-        const [showStats, setShowStats] = useState(false); // NEW STATE FOR STATS
+        const [showStats, setShowStats] = useState(false); 
         const [filterSettings, setFilterSettings] = useState({
-            showGen2: false,
-            showGen3: false,
+            showGen1Only: false, // REPLACED GEN FILTERS WITH THIS
             showSlots: true,
             showRealOnly: false,
             showDream: true,
@@ -432,20 +452,15 @@
             // Process Extras (now includes manual IDs and Trainers)
             const sortedExtras = [...extraPokemon].sort((a, b) => a.apiId - b.apiId);
             
-            // Filter Gen 2 vs Gen 3 vs High ID (Manual)
-            if (filterSettings.showGen2) {
-                const gen2 = sortedExtras.filter(e => e.apiId >= 152 && e.apiId <= 251);
-                result = [...result, ...gen2];
+            // FILTER LOGIC UPDATED
+            if (filterSettings.showGen1Only) {
+                // If Gen 1 Only is checked, only show extras with ID <= 151
+                const gen1Extras = sortedExtras.filter(e => e.apiId <= 151);
+                result = [...result, ...gen1Extras];
+            } else {
+                // Otherwise show everything (Gen 2, 3, Trainers etc)
+                result = [...result, ...sortedExtras];
             }
-            if (filterSettings.showGen3) {
-                const gen3 = sortedExtras.filter(e => e.apiId >= 252 && e.apiId <= 386);
-                result = [...result, ...gen3];
-            }
-            
-            // Allow manual entries (Gen 4+) to show if they are Pokemon, OR show all manual input regardless of range if it matches nothing else
-            const others = sortedExtras.filter(e => (e.apiId > 386 || e.apiId < 152) && !e.isBase);
-            // Always show "others" (manual entries) if they exist, unless filtered by Trainer toggle
-            result = [...result, ...others];
 
             // Filter Trainers if hidden
             if (!filterSettings.showTrainers) {
@@ -453,7 +468,12 @@
             }
 
             // Re-sort entire list by ID to ensure correct placement
-            result.sort((a, b) => a.apiId - b.apiId);
+            // Modified Sort: API ID first, then Trainers go AFTER Pokemon of same ID
+            result.sort((a, b) => {
+                if (a.apiId !== b.apiId) return a.apiId - b.apiId;
+                if (a.isTrainer !== b.isTrainer) return a.isTrainer ? 1 : -1;
+                return 0;
+            });
 
             // Process Slots
             let finalResult = [];
@@ -814,14 +834,13 @@
                                 <div className="flex flex-col md:flex-row gap-6 justify-between">
                                     <div className="flex flex-wrap gap-4 items-center">
                                         <span className="text-slate-400 font-bold uppercase text-xs tracking-wider">Show:</span>
+                                        
+                                        {/* GEN 1 ONLY TOGGLE */}
                                         <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showGen2} onChange={() => toggleFilter('showGen2')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
-                                            <span className={filterSettings.showGen2 ? "text-white" : "text-slate-500"}>Gen 2</span>
+                                            <input type="checkbox" checked={filterSettings.showGen1Only} onChange={() => toggleFilter('showGen1Only')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
+                                            <span className={filterSettings.showGen1Only ? "text-white font-bold" : "text-slate-500"}>Gen 1 Only</span>
                                         </label>
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={filterSettings.showGen3} onChange={() => toggleFilter('showGen3')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
-                                            <span className={filterSettings.showGen3 ? "text-white" : "text-slate-500"}>Gen 3</span>
-                                        </label>
+
                                         <label className="flex items-center gap-2 cursor-pointer select-none">
                                             <input type="checkbox" checked={filterSettings.showSlots} onChange={() => toggleFilter('showSlots')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
                                             <span className={filterSettings.showSlots ? "text-white" : "text-slate-500"}>Slots</span>
@@ -959,7 +978,7 @@
                 if (!selectedId) return;
                 const poke = currentList.find(p => p.id === parseInt(selectedId));
                 if (!poke) return;
-                const newPoke = { name: poke.name, apiId: poke.id, key: poke.id.toString() + "-" + poke.name.toLowerCase(), isMega: false, displayId: poke.id.toString().padStart(3, '0'), cardImage: url || null, isTrainer: false };
+                const newPoke = { name: poke.name, apiId: poke.id, key: poke.id.toString() + "-" + poke.name.toLowerCase(), isMega: false, displayId: poke.id.toString().padStart(3, '0'), cardImage: url || null, isTrainer: false, isBase: false };
                 onAdd(newPoke);
             } else {
                 if (!manualName || !manualId) return;
@@ -971,7 +990,8 @@
                     isMega: false, 
                     displayId: idNum.toString().padStart(3, '0'), 
                     cardImage: url || null,
-                    isTrainer: isTrainer
+                    isTrainer: isTrainer,
+                    isBase: false
                 };
                 onAdd(newPoke);
             }
@@ -1057,8 +1077,6 @@
             });
         }, [searchQuery, entries, binder, filterSettings]);
 
-        let lastWasTrainer = false;
-
         return (
             <div className={`grid ${gridColumns === 0 ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : `grid-cols-${gridColumns}`} gap-3 md:gap-6`}>
                 {filteredList.map((entry, index) => {
@@ -1066,6 +1084,15 @@
                     const isOwned = customCard && customCard.owned;
                     let imageSrc = getDefaultImage(entry);
                     const hasRealUrl = customCard && customCard.url;
+                    
+                    const prevEntry = filteredList[index - 1];
+                    const nextEntry = filteredList[index + 1];
+
+                    // Logic: If current is Trainer and previous wasn't, force new row (start of block)
+                    const isTrainerBlockStart = entry.isTrainer && (!prevEntry || !prevEntry.isTrainer);
+                    // Logic: If current is Trainer and next isn't, show break (end of block)
+                    const isTrainerBlockEnd = entry.isTrainer && (!nextEntry || !nextEntry.isTrainer);
+
                     const hasFanArt = customCard && customCard.fanArtUrl;
                     const hasDream = customCard && customCard.dreamUrl;
                     const hasIdeal = customCard && customCard.idealUrl;
@@ -1110,18 +1137,11 @@
                     if (isOwned && rarity === "standard" && !entry.isMega) cardBorderClass = "border-green-500";
                     else if (entry.isCustom && rarity === "standard") cardBorderClass = "extra-border border-blue-400";
 
-                    // Trainer Separator Logic
-                    let showSeparator = false;
-                    // If current is Trainer and previous wasn't a Trainer, show separator
-                    // Check logic based on sorted filtered list
-                    if (entry.isTrainer && !lastWasTrainer) {
-                         showSeparator = true;
-                    }
-                    if (entry.isTrainer) lastWasTrainer = true;
-
                     return (
                         <React.Fragment key={entry.key}>
-                            {showSeparator && <div className="trainer-separator">Trainers</div>}
+                            {/* Force new row before trainers start */}
+                            {isTrainerBlockStart && <div className="trainer-break trainer-break-top"></div>}
+
                             <div id={`poke-card-${entry.key}`} onClick={() => onSelect(entry)} className={`card-hover bg-slate-800 rounded-lg overflow-hidden cursor-pointer group relative border ${cardBorderClass}`}>
                                 <div className={`absolute top-1 left-1 z-10 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${badgeClass}`}>{badgeText}</div>
                                 
@@ -1154,6 +1174,9 @@
                                     </h3>
                                 </div>
                             </div>
+
+                            {/* Break at bottom after trainers end */}
+                            {isTrainerBlockEnd && <div className="trainer-break trainer-break-bottom"></div>}
                         </React.Fragment>
                     );
                 })}
@@ -1303,7 +1326,9 @@
                             ) : (
                                 <button onClick={() => onRemoveSlot(entry)} className="flex items-center gap-2 bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded text-xs font-bold text-white transition-colors whitespace-nowrap"><IconTrash /> Slot</button>
                             )}
-                            {!entry.isCustom && entry.apiId > 151 && !entry.isMega && (
+                            
+                            {/* UPDATED DELETE CONDITION: Check !isBase instead of ID > 151 */}
+                            {!entry.isCustom && !entry.isBase && (
                                 <button onClick={() => onDeletePokemon(entry)} className="flex items-center gap-2 bg-red-900/50 hover:bg-red-900 border border-red-800 px-3 py-1.5 rounded text-xs font-bold text-red-200 transition-colors whitespace-nowrap"><IconTrash /> Entry</button>
                             )}
                         </div>
@@ -1385,6 +1410,10 @@
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
