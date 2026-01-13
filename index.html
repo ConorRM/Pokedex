@@ -175,6 +175,7 @@
     const IconPound = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 7c0-5.333-8-5.333-8 0v14h10"/><path d="M6 13h9"/></svg>;
     const IconSave = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
     const IconGraph = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
+    const IconCards = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
 
     // --- UTILS ---
     const Toast = ({ msg, onClose }) => {
@@ -339,6 +340,15 @@
         { id: 380, name: "Latias" }, { id: 381, name: "Latios" }, { id: 382, name: "Kyogre" }, { id: 383, name: "Groudon" }, { id: 384, name: "Rayquaza" }, { id: 385, name: "Jirachi" }, { id: 386, name: "Deoxys" }
     ];
 
+    // Mapping Dex ID to Base Set (1999) Number
+    const WOTC_BASE_MAP = {
+        65: 1, 9: 2, 113: 3, 6: 4, 35: 5, 130: 6, 107: 7, 68: 8, 82: 9, 150: 10, 34: 11, 38: 12, 62: 13, 26: 14, 3: 15, 145: 16,
+        15: 17, 148: 18, 51: 19, 125: 20, 101: 21, 17: 22, 59: 23, 5: 24, 87: 25, 147: 26, 83: 27, 58: 28, 93: 29, 2: 30, 124: 31,
+        64: 32, 14: 33, 67: 34, 129: 35, 126: 36, 33: 37, 61: 38, 137: 39, 20: 40, 86: 41, 8: 42, 63: 43, 1: 44, 10: 45, 4: 46,
+        50: 47, 84: 48, 96: 49, 92: 50, 109: 51, 66: 52, 81: 53, 11: 54, 32: 55, 95: 56, 16: 57, 25: 58, 60: 59, 77: 60, 19: 61,
+        27: 62, 7: 63, 121: 64, 120: 65, 114: 66, 100: 67, 37: 68, 13: 69
+    };
+
     const getDefaultImage = (entry) => {
         if (entry.cardImage) return entry.cardImage;
         if (entry.isTrainer) return 'https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg';
@@ -394,7 +404,9 @@
         const [showFilters, setShowFilters] = useState(false);
         const [showStats, setShowStats] = useState(false); 
         const [filterSettings, setFilterSettings] = useState({
-            showGen1Only: false, // REPLACED GEN FILTERS WITH THIS
+            showGen1Only: false, 
+            showBase151: false, // Renamed in UI to Modern 151
+            show1999: false, // NEW: Vintage 1999 Base Set
             showSlots: true,
             showRealOnly: false,
             showDream: true,
@@ -841,6 +853,18 @@
                                             <span className={filterSettings.showGen1Only ? "text-white font-bold" : "text-slate-500"}>Gen 1 Only</span>
                                         </label>
 
+                                        {/* MODERN 151 TOGGLE */}
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" checked={filterSettings.showBase151} onChange={() => { toggleFilter('showBase151'); if(filterSettings.show1999) setFilterSettings(prev => ({...prev, show1999: false})); }} className="rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" />
+                                            <span className={filterSettings.showBase151 ? "text-purple-400 font-bold" : "text-slate-500"}>Modern 151 Set</span>
+                                        </label>
+
+                                        {/* 1999 BASE SET TOGGLE */}
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                            <input type="checkbox" checked={filterSettings.show1999} onChange={() => { toggleFilter('show1999'); if(filterSettings.showBase151) setFilterSettings(prev => ({...prev, showBase151: false})); }} className="rounded border-slate-600 bg-slate-800 text-yellow-500 focus:ring-yellow-500" />
+                                            <span className={filterSettings.show1999 ? "text-yellow-400 font-bold" : "text-slate-500"}>1999 Base Set</span>
+                                        </label>
+
                                         <label className="flex items-center gap-2 cursor-pointer select-none">
                                             <input type="checkbox" checked={filterSettings.showSlots} onChange={() => toggleFilter('showSlots')} className="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
                                             <span className={filterSettings.showSlots ? "text-white" : "text-slate-500"}>Slots</span>
@@ -1077,6 +1101,8 @@
             });
         }, [searchQuery, entries, binder, filterSettings]);
 
+        let lastWasTrainer = false;
+
         return (
             <div className={`grid ${gridColumns === 0 ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : `grid-cols-${gridColumns}`} gap-3 md:gap-6`}>
                 {filteredList.map((entry, index) => {
@@ -1101,7 +1127,14 @@
                     let showingDream = false;
                     let showingIdeal = false;
                     
-                    if (filterSettings.showRealOnly) {
+                    // IMAGE SOURCE LOGIC
+                    if (filterSettings.show1999 && WOTC_BASE_MAP[entry.apiId]) {
+                        // 1999 Base Set Logic
+                        imageSrc = `https://images.pokemontcg.io/base1/${WOTC_BASE_MAP[entry.apiId]}_hires.png`;
+                    } else if (filterSettings.showBase151 && entry.isBase && entry.apiId <= 151) {
+                        // Modern 151 Logic
+                        imageSrc = `https://images.pokemontcg.io/sv3pt5/${entry.apiId}_hires.png`;
+                    } else if (filterSettings.showRealOnly) {
                         if (hasRealUrl) imageSrc = customCard.url;
                     } else {
                         if (hasIdeal && filterSettings.showIdeal) {
@@ -1154,9 +1187,9 @@
 
                                 {!isOwned && entry.isCustom && <div className="absolute top-8 right-2 z-10 text-slate-500 text-[10px] font-bold">EXTRA</div>}
                                 
-                                {showingFanArt && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold fan-art-badge"><IconPalette /> ART</div>}
-                                {showingDream && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold dream-badge"><IconStar /> DREAM</div>}
-                                {showingIdeal && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold ideal-badge"><IconSparkles /> IDEAL</div>}
+                                {showingFanArt && !filterSettings.showBase151 && !filterSettings.show1999 && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold fan-art-badge"><IconPalette /> ART</div>}
+                                {showingDream && !filterSettings.showBase151 && !filterSettings.show1999 && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold dream-badge"><IconStar /> DREAM</div>}
+                                {showingIdeal && !filterSettings.showBase151 && !filterSettings.show1999 && <div className="absolute bottom-1 right-1 z-10 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-lg font-bold ideal-badge"><IconSparkles /> IDEAL</div>}
 
                                 <div className="aspect-[2.5/3.5] bg-slate-900 relative">
                                     <img 
@@ -1410,6 +1443,8 @@
 </script>
 </body>
 </html>
+
+
 
 
 
