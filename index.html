@@ -403,9 +403,10 @@
         // Filter States
         const [showFilters, setShowFilters] = useState(false);
         const [showStats, setShowStats] = useState(false); 
+        const [showOwnedMenu, setShowOwnedMenu] = useState(false); // NEW STATE
         const [filterSettings, setFilterSettings] = useState({
-            showOwned: true, // NEW
-            showNotOwned: true, // NEW
+            showOwned: true, 
+            showNotOwned: true,
             showGen1Only: false, 
             showBase151: false, 
             show1999: false, 
@@ -942,38 +943,53 @@
                                         })}
                                     </div>
 
-                                    {/* COLUMN DROPDOWN */}
-                                    <select 
-                                        value={gridColumns} 
-                                        onChange={(e) => handleSetGridColumns(parseInt(e.target.value))} 
-                                        className="bg-slate-800 text-white text-xs font-bold rounded border border-slate-600 px-2 py-1 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
-                                        title="Columns"
-                                    >
-                                        <option value={0}>Auto</option>
-                                        <option value={1}>1</option>
-                                        <option value={2}>2</option>
-                                        <option value={3}>3</option>
-                                        <option value={4}>4</option>
-                                        <option value={5}>5</option>
-                                        <option value={6}>6</option>
-                                    </select>
-                                </div>
-                            </div>
+                                    {/* RIGHT SIDE CONTROLS: Owned Toggle + Columns */}
+                                    <div className="flex items-center gap-3 relative">
+                                        {/* OWNED/MISSING TOGGLE BUTTON (Half Green/Red) */}
+                                        <button 
+                                            onClick={() => setShowOwnedMenu(!showOwnedMenu)}
+                                            className="w-6 h-6 rounded-full shadow-md border border-slate-500 hover:border-white hover:scale-110 transition-all"
+                                            style={{ background: 'linear-gradient(135deg, #10b981 50%, #f43f5e 50%)' }}
+                                            title="Filter Owned vs Missing"
+                                        />
 
-                            {/* HANGING TAB FOR OWNED/MISSING */}
-                            <div className="absolute top-full right-4 bg-slate-900 border-x border-b border-slate-700 rounded-b-lg px-3 py-2 shadow-xl flex gap-2 z-0">
-                                <button 
-                                    onClick={() => toggleFilter('showOwned')} 
-                                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showOwned ? "bg-green-600 text-white border-green-500 hover:bg-green-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
-                                >
-                                    Owned
-                                </button>
-                                <button 
-                                    onClick={() => toggleFilter('showNotOwned')} 
-                                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showNotOwned ? "bg-rose-600 text-white border-rose-500 hover:bg-rose-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
-                                >
-                                    Missing
-                                </button>
+                                        {/* OWNED/MISSING MENU POPUP */}
+                                        {showOwnedMenu && (
+                                            <div className="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-600 rounded-xl p-2 shadow-2xl flex flex-col gap-2 z-50 animate-zoom min-w-[100px]">
+                                                <button 
+                                                    onClick={() => toggleFilter('showOwned')} 
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center justify-between ${filterSettings.showOwned ? "bg-green-900/50 text-green-400 border-green-500" : "bg-slate-700 text-slate-500 border-slate-600"}`}
+                                                >
+                                                    <span>Owned</span>
+                                                    {filterSettings.showOwned && <IconCheck />}
+                                                </button>
+                                                <button 
+                                                    onClick={() => toggleFilter('showNotOwned')} 
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center justify-between ${filterSettings.showNotOwned ? "bg-rose-900/50 text-rose-400 border-rose-500" : "bg-slate-700 text-slate-500 border-slate-600"}`}
+                                                >
+                                                    <span>Missing</span>
+                                                    {filterSettings.showNotOwned && <IconCheck />}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* COLUMN DROPDOWN */}
+                                        <select 
+                                            value={gridColumns} 
+                                            onChange={(e) => handleSetGridColumns(parseInt(e.target.value))} 
+                                            className="bg-slate-800 text-white text-xs font-bold rounded border border-slate-600 px-2 py-1 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
+                                            title="Columns"
+                                        >
+                                            <option value={0}>A</option>
+                                            <option value={1}>1</option>
+                                            <option value={2}>2</option>
+                                            <option value={3}>3</option>
+                                            <option value={4}>4</option>
+                                            <option value={5}>5</option>
+                                            <option value={6}>6</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1521,11 +1537,6 @@
 </script>
 </body>
 </html>
-
-
-
-
-
 
 
 
