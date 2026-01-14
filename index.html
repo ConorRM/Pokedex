@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>P-151: Collector V3.5</title>
+    <title>151: Collector V3.5</title>
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068780.png" type="image/png">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1068/1068780.png">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -400,6 +400,8 @@
         const [toastMsg, setToastMsg] = useState(null);
         const [confirmConfig, setConfirmConfig] = useState(null);
         const [showMobileSearch, setShowMobileSearch] = useState(false); // NEW STATE
+        const [showSortMenu, setShowSortMenu] = useState(false); // NEW STATE
+        const [sortMode, setSortMode] = useState('dex'); // 'dex', 'value-high', 'value-low'
         
         // Filter States
         const [showFilters, setShowFilters] = useState(false);
@@ -412,7 +414,7 @@
             showBase151: false, 
             show1999: false, 
             showSlots: true,
-            showRealOnly: false,
+            showClown: false, // Changed from showRealOnly
             showDream: false,
             showIdeal: false,
             showTrainers: true, 
@@ -862,7 +864,7 @@
                         <div className="flex items-center gap-3 cursor-pointer select-none hover:opacity-80 transition-opacity" onClick={() => window.location.reload()}>
                             <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold text-slate-900"><IconDna /></div>
                             <div>
-                                <h1 className="text-xl font-bold tracking-tight text-white">P-151 <span className="text-indigo-400 text-sm font-normal">V3.5</span></h1>
+                                <h1 className="text-xl font-bold tracking-tight text-white">151 <span className="text-indigo-400 text-sm font-normal">V3.5</span></h1>
                             </div>
                         </div>
 
@@ -947,10 +949,10 @@
                                         </button>
 
                                         <button 
-                                            onClick={() => toggleFilter('showRealOnly')} 
-                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showRealOnly ? "bg-pink-600 text-white border-pink-500 hover:bg-pink-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
+                                            onClick={() => toggleFilter('showClown')} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shadow-sm ${filterSettings.showClown ? "bg-pink-600 text-white border-pink-500 hover:bg-pink-500" : "bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-400"}`}
                                         >
-                                            Real
+                                            🤡
                                         </button>
                                     </div>
                                 </div>
@@ -1259,9 +1261,8 @@
                     } else if (filterSettings.showBase151 && entry.isBase && entry.apiId <= 151) {
                         // Modern 151 Logic
                         imageSrc = `https://images.pokemontcg.io/sv3pt5/${entry.apiId}_hires.png`;
-                    } else if (filterSettings.showRealOnly) {
-                        if (hasRealUrl) imageSrc = customCard.url;
-                    } else {
+                    } else if (filterSettings.showClown) {
+                        // CLOWN MODE ON: Prioritize Fan Art / Ideal / Dream
                         if (hasIdeal && filterSettings.showIdeal) {
                             imageSrc = customCard.idealUrl;
                             showingIdeal = true;
@@ -1273,6 +1274,20 @@
                             showingFanArt = true; 
                         } else if (hasRealUrl) {
                             imageSrc = customCard.url;
+                        }
+                    } else {
+                        // DEFAULT MODE (CLOWN OFF): Prioritize Real
+                        if (hasRealUrl) {
+                            imageSrc = customCard.url;
+                        } else if (hasIdeal && filterSettings.showIdeal) {
+                            imageSrc = customCard.idealUrl;
+                            showingIdeal = true;
+                        } else if (hasDream && filterSettings.showDream) {
+                            imageSrc = customCard.dreamUrl;
+                            showingDream = true;
+                        } else if (hasFanArt) { 
+                            imageSrc = customCard.fanArtUrl; 
+                            showingFanArt = true; 
                         }
                     }
 
@@ -1578,5 +1593,7 @@
 </script>
 </body>
 </html>
+
+
 
 
