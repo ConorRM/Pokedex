@@ -945,20 +945,22 @@
                                             </button>
                                         </div>
 
-                                        <div className="border-t border-slate-700 pt-2">
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase block mb-2">Grid Columns</span>
-                                            <div className="grid grid-cols-5 gap-1">
-                                                {[0, 1, 2, 4, 6].map(col => (
-                                                    <button 
-                                                        key={col}
-                                                        onClick={() => handleSetGridColumns(col)}
-                                                        className={`py-1 rounded text-xs font-bold border ${gridColumns === col ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-400 hover:text-white'}`}
-                                                    >
-                                                        {col === 0 ? 'A' : col}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
+                                       <div className="border-t border-slate-700 pt-2">
+    <span className="text-[10px] text-slate-400 font-bold uppercase block mb-2">Grid Columns</span>
+    {/* Changed grid-cols-5 to grid-cols-6 to fit the new button */}
+    <div className="grid grid-cols-6 gap-1">
+        {/* Added '3' to the array below */}
+        {[0, 1, 2, 3, 4, 6].map(col => (
+            <button 
+                key={col}
+                onClick={() => handleSetGridColumns(col)}
+                className={`py-1 rounded text-xs font-bold border ${gridColumns === col ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-400 hover:text-white'}`}
+            >
+                {col === 0 ? 'A' : col}
+            </button>
+        ))}
+    </div>
+</div>
                                     </div>
                                 )}
                                 <button 
